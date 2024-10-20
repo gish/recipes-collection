@@ -1,6 +1,7 @@
 ---
 title: Tandoorikryddad kyckling med saffransbulgur
-category: Kyckling
+category: kyckling
+source: Allt om mat
 ---
 
 **Till 4 personer**

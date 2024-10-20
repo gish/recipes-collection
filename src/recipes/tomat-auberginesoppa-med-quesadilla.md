@@ -1,6 +1,7 @@
 ---
 title: Tomat- och auberginesoppa med quesadilla
-category: Vegetariskt
+category: vegetariskt
+source: https://www.coop.se/recept/tomat-och-auberginesoppa-med-quesadilla/
 ---
 
 ## Ingredienser

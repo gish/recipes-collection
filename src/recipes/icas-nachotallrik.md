@@ -1,6 +1,7 @@
 ---
 title: ICAs Nachotallrik
-category: Kött
+category: kött
+source: https://www.ica.se/recept/nachotallrik-729736/
 ---
 
 ## Ingredienser

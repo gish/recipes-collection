@@ -1,6 +1,7 @@
 ---
 title: Vegetarisk pastasås med färskost och svarta bönor
-category: Vegetariskt
+category: vegetariskt
+source: https://www.tasteline.com/recept/vegetarisk-pastasas-med-farskost-och-svarta-bonor/
 ---
 
 ## Ingredienser (4 port)
