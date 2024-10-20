@@ -3,8 +3,6 @@ title: Tandoorikryddad kyckling med saffransbulgur
 category: Kyckling
 ---
 
-# Tandoorikryddad kyckling med saffransbulgur
-
 **Till 4 personer**
 **Tid:** 30 minuter
 

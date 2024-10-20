@@ -3,8 +3,6 @@ title: Tomat- och auberginesoppa med quesadilla
 category: Vegetariskt
 ---
 
-# Tomat- och auberginesoppa med quesadilla
-
 ## Ingredienser
 
 ### Soppa

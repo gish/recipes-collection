@@ -2,6 +2,8 @@ import { walk } from "jsr:@std/fs/walk";
 import { extractYaml } from "jsr:@std/front-matter";
 import { Database } from "jsr:@db/sqlite";
 import { Hono } from "jsr:@hono/hono";
+import { html, raw } from "jsr:@mark/html";
+import { Renderer } from "jsr:@libs/markdown";
 
 type FrontMatter = {
   title: string | undefined;
@@ -64,37 +66,100 @@ const bootstrap = async () => {
   for (const recipe of recipes) {
     const { name, content, title, category } = recipe;
     db.exec(
-      "INSERT INTO recipes(name, content, title, category) values(:name, :content, :category, :title);",
+      "INSERT INTO recipes(name, content, title, category) values(:name, :content, :title, :category);",
       {
         name,
         content,
-        title,
         category,
+        title,
       }
     );
   }
 
   const app = new Hono();
-  app.get("/recept", (c) => {
+  app.get("/", (c) => {
     const stmt = db.prepare(
       "SELECT name, content, title, category FROM recipes"
     );
-    const all = [];
+    const recipes = [];
     for (const recipe of stmt.all()) {
-      all.push(recipe);
+      recipes.push(recipe);
     }
-    return c.json(all);
+    const output = html` <html>
+      <body>
+        <h1>Recept</h1>
+        <ul>
+          ${recipes.map(
+            (recipe) =>
+              html`<li>
+                <a href="/recept/${recipe.name}">${recipe.title}</a>
+              </li>`
+          )}
+        </ul>
+      </body>
+    </html>`();
+    return c.html(output);
   });
-  app.get("/recept/:name", (c) => {
+
+  app.get("/kategorier/:category", (c) => {
+    const category = c.req.param("category");
+    const stmt = db.prepare(
+      "SELECT name, content, title, category FROM recipes WHERE LOWER(category) = ?"
+    );
+    const allRecipes = stmt.all(category);
+    if (!allRecipes.length) {
+      return c.json({ error: "not_found" }, 404);
+    }
+    const recipes = [];
+    for (const recipe of allRecipes) {
+      recipes.push(recipe);
+    }
+    const readableCategory = recipes.at(0)?.category;
+    const output = html`<html>
+      <body>
+        <h1>${readableCategory}</h1>
+        <ul>
+          ${recipes.map(
+            (recipe) =>
+              html`<li>
+                <a href="/recept/${recipe.name}">${recipe.title}</a>
+              </li>`
+          )}
+        </ul>
+        <a href="/">Tillbaka</a>
+      </body>
+    </html>`();
+
+    return c.html(output);
+  });
+
+  app.get("/recept/:name", async (c) => {
     const stmt = db.prepare(
       "SELECT name, content, title, category FROM recipes WHERE name = ?"
     );
     const name = c.req.param("name");
-    const recipe = stmt.all(name);
-    if (!recipe.length) {
+    const allRecipes = stmt.all(name);
+    if (!allRecipes.length) {
       return c.json({ error: "not_found" }, 404);
     }
-    return c.json(recipe.at(0));
+    const recipe = allRecipes.at(0);
+    if (recipe === undefined) {
+      return c.json({ error: "not_found" }, 404);
+    }
+    const content = await Renderer.render(recipe.content);
+    const categorySlug = recipe.category.toLowerCase();
+    const output = html`<html>
+      <body>
+        <h1>${recipe.title}</h1>
+        ${raw(content)}
+        <p>
+          Kategori:
+          <a href="/kategorier/${categorySlug}">${recipe.category}</a><br />
+        </p>
+        <a href="/">Tillbaka</a>
+      </body>
+    </html>`();
+    return c.html(output);
   });
   Deno.serve({ port: 8080 }, app.fetch);
 };
