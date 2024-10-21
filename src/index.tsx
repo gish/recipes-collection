@@ -87,12 +87,11 @@ const bootstrap = async () => {
   const layout = (title: string, children: ReturnType<typeof html>) => {
     return html`<html>
       <head>
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css"
+        />
         <title>${title} - Recept</title>
-        <style type="text/css">
-          html {
-            line-height: 1.5;
-          }
-        </style>
       </head>
       <body>
         ${raw(children())}
