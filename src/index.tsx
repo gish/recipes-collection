@@ -184,7 +184,7 @@ const bootstrap = async () => {
     const page = layout(recipe.title, output);
     return c.html(page);
   });
-  Deno.serve({ port: 8080 }, app.fetch);
+  Deno.serve({ port: 8000 }, app.fetch);
 };
 
 bootstrap();
