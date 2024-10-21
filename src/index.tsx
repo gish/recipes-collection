@@ -99,6 +99,11 @@ const bootstrap = async () => {
     </html>`();
   };
 
+  const notFoundPage = layout(
+    "Sidan finns inte",
+    html`Hoppsan, sidan finns inte`
+  );
+
   const app = new Hono();
   app.get("/", (c) => {
     const stmt = db.prepare(
@@ -128,7 +133,7 @@ const bootstrap = async () => {
     );
     const allRecipes = stmt.all(category);
     if (!allRecipes.length) {
-      return c.json({ error: "not_found" }, 404);
+      return c.html(notFoundPage, 404);
     }
     const recipes = [];
     for (const recipe of allRecipes) {
@@ -159,11 +164,11 @@ const bootstrap = async () => {
     const slug = c.req.param("slug");
     const allRecipes = stmt.all(slug);
     if (!allRecipes.length) {
-      return c.json({ error: "not_found" }, 404);
+      return c.html(notFoundPage, 404);
     }
     const recipe = allRecipes.at(0);
     if (recipe === undefined) {
-      return c.json({ error: "not_found" }, 404);
+      return c.html(notFoundPage, 404);
     }
     const content = await Renderer.render(recipe.content);
     const categorySlug = recipe.category.toLowerCase();
