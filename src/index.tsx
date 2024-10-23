@@ -68,7 +68,7 @@ const bootstrap = async () => {
   const recipes = await getRecipes();
   const db = new Database(":memory:");
   db.exec(
-    `CREATE TABLE IF NOT EXISTS recipes(slug TEXT, content TEXT, title TEXT, category TEXT, source TEXT);`,
+    `CREATE TABLE IF NOT EXISTS recipes(slug TEXT, content TEXT, title TEXT, category TEXT, source TEXT);`
   );
 
   for (const recipe of recipes) {
@@ -81,7 +81,7 @@ const bootstrap = async () => {
         category,
         title,
         source,
-      },
+      }
     );
   }
 
@@ -103,13 +103,13 @@ const bootstrap = async () => {
 
   const notFoundPage = layout(
     "Sidan finns inte",
-    html`Hoppsan, sidan finns inte`,
+    html`Hoppsan, sidan finns inte`
   );
 
   const app = new Hono();
   app.get("/", (c) => {
     const stmt = db.prepare(
-      "SELECT slug, content, title, category FROM recipes ORDER BY title",
+      "SELECT slug, content, title, category FROM recipes ORDER BY title"
     );
     const recipes = [];
     for (const recipe of stmt.all()) {
@@ -117,14 +117,12 @@ const bootstrap = async () => {
     }
     const output = html` <h1>Recept</h1>
       <ul>
-        ${
-      recipes.map(
-        (recipe) =>
-          html`<li>
+        ${recipes.map(
+          (recipe) =>
+            html`<li>
               <a href="/recept/${recipe.slug}">${recipe.title}</a>
-            </li>`,
-      )
-    }
+            </li>`
+        )}
       </ul>`;
     const page = layout("Start", output);
     return c.html(page);
@@ -133,7 +131,7 @@ const bootstrap = async () => {
   app.get("/kategorier/:category", (c) => {
     const category = c.req.param("category");
     const stmt = db.prepare(
-      "SELECT slug, content, title, category FROM recipes WHERE category = ? ORDER BY title",
+      "SELECT slug, content, title, category FROM recipes WHERE category = ? ORDER BY title"
     );
     const allRecipes = stmt.all(category);
     if (!allRecipes.length) {
@@ -147,14 +145,12 @@ const bootstrap = async () => {
     const output = html`
       <h1>${readableCategory}</h1>
       <ul>
-        ${
-      recipes.map(
-        (recipe) =>
-          html`<li>
+        ${recipes.map(
+          (recipe) =>
+            html`<li>
               <a href="/recept/${recipe.slug}">${recipe.title}</a>
-            </li>`,
-      )
-    }
+            </li>`
+        )}
       </ul>
       <a href="/">Start</a>
     `;
@@ -163,11 +159,11 @@ const bootstrap = async () => {
     return c.html(page);
   });
 
-  app.get("/recept/*", etag());
+  app.use("/recept/*", etag());
 
   app.get("/recept/:slug", async (c) => {
     const stmt = db.prepare(
-      "SELECT slug, content, title, category FROM recipes WHERE slug = ?",
+      "SELECT slug, content, title, category FROM recipes WHERE slug = ?"
     );
     const slug = c.req.param("slug");
     const allRecipes = stmt.all(slug);
