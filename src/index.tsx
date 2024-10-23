@@ -3,6 +3,7 @@ import { extractYaml } from "jsr:@std/front-matter";
 import { Database } from "jsr:@db/sqlite";
 import { Hono } from "hono";
 import { etag } from "hono/etag";
+import { compress } from "hono/compress";
 import { html, raw } from "jsr:@mark/html";
 import { Renderer } from "jsr:@libs/markdown";
 
@@ -107,6 +108,8 @@ const bootstrap = async () => {
   );
 
   const app = new Hono();
+  app.use(compress());
+
   app.get("/", (c) => {
     const stmt = db.prepare(
       "SELECT slug, content, title, category FROM recipes ORDER BY title"
