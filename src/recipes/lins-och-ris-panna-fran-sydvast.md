@@ -4,8 +4,6 @@ category: vegetariskt
 source: https://www.budgetbytes.com/southwest-lentils-and-rice-skillet/
 ---
 
-# Enpanna med linser och ris
-
 ## Ingredienser
 
 - 1 msk olivolja
