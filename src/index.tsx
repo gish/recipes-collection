@@ -65,6 +65,12 @@ const getRecipes = async () => {
   return files;
 };
 
+const uppercaseFirst = (input: string): string => {
+  const first = input.slice(0, 1);
+  const rest = input.slice(1);
+  return first.toUpperCase() + rest;
+};
+
 const bootstrap = async () => {
   const recipes = await getRecipes();
   const db = new Database(":memory:");
@@ -114,8 +120,8 @@ const bootstrap = async () => {
     const stmt = db.prepare(
       "SELECT slug, content, title, category FROM recipes ORDER BY title"
     );
-    const recipes = [];
-    for (const recipe of stmt.all()) {
+    const recipes: Recipe[] = [];
+    for (const recipe of stmt.all<Recipe>()) {
       recipes.push(recipe);
     }
     const output = html` <h1>Recept</h1>
@@ -132,21 +138,26 @@ const bootstrap = async () => {
   });
 
   app.get("/kategorier/:category", (c) => {
-    const category = c.req.param("category");
+    const requestedCategory = c.req.param("category");
     const stmt = db.prepare(
       "SELECT slug, content, title, category FROM recipes WHERE category = ? ORDER BY title"
     );
-    const allRecipes = stmt.all(category);
+    const allRecipes = stmt.all<Recipe>(requestedCategory);
     if (!allRecipes.length) {
       return c.html(notFoundPage, 404);
     }
-    const recipes = [];
+    const recipes: Recipe[] = [];
     for (const recipe of allRecipes) {
       recipes.push(recipe);
     }
-    const readableCategory = recipes.at(0)?.category;
+    const category = recipes.at(0)?.category;
+
+    if (!category) {
+      return c.html(notFoundPage, 404);
+    }
+
     const output = html`
-      <h1>${readableCategory}</h1>
+      <h1>Recept med kategori ${category}</h1>
       <ul>
         ${recipes.map(
           (recipe) =>
@@ -158,6 +169,7 @@ const bootstrap = async () => {
       <a href="/">Start</a>
     `;
 
+    const readableCategory = uppercaseFirst(category);
     const page = layout(readableCategory, output);
     return c.html(page);
   });
@@ -169,7 +181,7 @@ const bootstrap = async () => {
       "SELECT slug, content, title, category FROM recipes WHERE slug = ?"
     );
     const slug = c.req.param("slug");
-    const allRecipes = stmt.all(slug);
+    const allRecipes = stmt.all<Recipe>(slug);
     if (!allRecipes.length) {
       return c.html(notFoundPage, 404);
     }
@@ -179,12 +191,13 @@ const bootstrap = async () => {
     }
     const content = await Renderer.render(recipe.content);
     const categorySlug = recipe.category.toLowerCase();
+    const readableCategory = uppercaseFirst(recipe.category);
     const output = html`
       <h1>${recipe.title}</h1>
       ${raw(content)}
       <p>
         Kategori:
-        <a href="/kategorier/${categorySlug}">${recipe.category}</a><br />
+        <a href="/kategorier/${categorySlug}">${readableCategory}</a><br />
       </p>
       <a href="/">Start</a>
     `;
