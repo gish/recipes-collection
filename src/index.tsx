@@ -71,6 +71,13 @@ const uppercaseFirst = (input: string): string => {
   return first.toUpperCase() + rest;
 };
 
+const formatSource = (source: string): string => {
+  if (source.includes("https://")) {
+    return html`<a href="${source}">${source}</a>`();
+  }
+  return source;
+};
+
 const bootstrap = async () => {
   const recipes = await getRecipes();
   const db = new Database(":memory:");
@@ -178,7 +185,7 @@ const bootstrap = async () => {
 
   app.get("/recept/:slug", async (c) => {
     const stmt = db.prepare(
-      "SELECT slug, content, title, category FROM recipes WHERE slug = ?"
+      "SELECT slug, content, title, category, source FROM recipes WHERE slug = ?"
     );
     const slug = c.req.param("slug");
     const allRecipes = stmt.all<Recipe>(slug);
@@ -192,14 +199,14 @@ const bootstrap = async () => {
     const content = await Renderer.render(recipe.content);
     const categorySlug = recipe.category.toLowerCase();
     const readableCategory = uppercaseFirst(recipe.category);
+    const formattedSource = formatSource(recipe.source);
     const output = html`
       <h1>${recipe.title}</h1>
       ${raw(content)}
-      <p>
-        Kategori:
-        <a href="/kategorier/${categorySlug}">${readableCategory}</a><br />
-      </p>
-      <a href="/">Start</a>
+        <dl><td>Kategori</dt><dd><a href="/kategorier/${categorySlug}">${readableCategory}</a></dd>
+          <dt>Källa</dt><dd>${raw(formattedSource)}</dd>
+        </dl>
+      <a href="/">&laquo; Start</a>
     `;
     const page = layout(recipe.title, output);
     return c.html(page);
