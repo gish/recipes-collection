@@ -3,6 +3,7 @@ import { extractYaml } from "jsr:@std/front-matter";
 import { Database } from "jsr:@db/sqlite";
 import { Hono } from "hono";
 import { etag } from "hono/etag";
+import { appendTrailingSlash } from "hono/trailing-slash";
 import { compress } from "hono/compress";
 import { html, raw } from "jsr:@mark/html";
 import { Renderer } from "jsr:@libs/markdown";
@@ -13,6 +14,7 @@ type MarkdownContent = {
   body: string;
   source: string | undefined;
 };
+
 type Recipe = {
   slug: string;
   content: string;
@@ -121,17 +123,14 @@ const bootstrap = async () => {
   );
 
   const app = new Hono();
-  app.use(compress());
+  app.use(compress()).use(appendTrailingSlash());
 
   app.get("/", (c) => {
     const stmt = db.prepare(
       "SELECT slug, content, title, category FROM recipes ORDER BY title"
     );
-    const recipes: Recipe[] = [];
-    for (const recipe of stmt.all<Recipe>()) {
-      recipes.push(recipe);
-    }
-    const output = html` <h1>Recept</h1>
+    const recipes: Recipe[] = stmt.all<Recipe>();
+    const output = html`<h1>Recept</h1>
       <ul>
         ${recipes.map(
           (recipe) =>
@@ -141,6 +140,34 @@ const bootstrap = async () => {
         )}
       </ul>`;
     const page = layout("Start", output);
+    return c.html(page);
+  });
+
+  app.get("/kategorier", (c) => {
+    const stmt = db.prepare(
+      "SELECT category, COUNT(slug) AS sum FROM recipes GROUP BY category ORDER BY category"
+    );
+    const categories = stmt.all<Pick<Recipe, "category"> & { sum: number }>();
+    if (!categories.length) {
+      return c.html(notFoundPage, 404);
+    }
+
+    const output = html`
+      <h1>Kategorier</h1>
+      <ul>
+        ${categories.map(
+          (category) =>
+            html`<li>
+              <a href="/kategorier/${category.category}"
+                >${uppercaseFirst(category.category)}</a
+              >
+              (${`${category.sum}`})
+            </li>`
+        )}
+      </ul>
+      <a href="/">Start</a>
+    `;
+    const page = layout("Kategorier", output);
     return c.html(page);
   });
 
