@@ -3,6 +3,7 @@ import { extractYaml } from "jsr:@std/front-matter";
 import { Database } from "jsr:@db/sqlite";
 import { Hono } from "hono";
 import { etag } from "hono/etag";
+import { logger } from "hono/logger";
 import { appendTrailingSlash } from "hono/trailing-slash";
 import { compress } from "hono/compress";
 import { html, raw } from "jsr:@mark/html";
@@ -33,6 +34,7 @@ const extractMarkdownContent = (markdown: string): MarkdownContent | null => {
     return null;
   }
 };
+
 const getRecipes = async () => {
   const files: Recipe[] = [];
   const path = "./src/recipes";
@@ -123,7 +125,7 @@ const bootstrap = async () => {
   );
 
   const app = new Hono();
-  app.use(compress()).use(appendTrailingSlash());
+  app.use(compress()).use(appendTrailingSlash()).use(logger());
 
   app.get("/", (c) => {
     const stmt = db.prepare(
