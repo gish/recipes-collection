@@ -104,19 +104,20 @@ const bootstrap = async () => {
   }
 
   const layout = (title: string, children: ReturnType<typeof html>) => {
-    return html`<html>
-      <head>
-        <link
-          rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css"
-        />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <title>${title} - Recept</title>
-      </head>
-      <body>
-        ${raw(children())}
-      </body>
-    </html>`();
+    return html` <!DOCTYPE html>
+      <html>
+        <head>
+          <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css"
+          />
+          <meta name="viewport" content="width=device-width,initial-scale=1" />
+          <title>${title} - Recept</title>
+        </head>
+        <body>
+          ${raw(children())}
+        </body>
+      </html>`();
   };
 
   const notFoundPage = layout(
