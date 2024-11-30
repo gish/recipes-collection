@@ -29,7 +29,7 @@ const extractMarkdownContent = (markdown: string): MarkdownContent | null => {
     const frontMatterExtract = extractYaml<MarkdownContent>(markdown);
     const { title, category, source } = frontMatterExtract.attrs;
     const body = frontMatterExtract.body;
-    return { title, category, body, source };
+    return { title, category: category?.toLowerCase(), body, source };
   } catch (_) {
     return null;
   }

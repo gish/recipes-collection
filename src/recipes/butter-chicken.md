@@ -1,6 +1,6 @@
 ---
 title: Butter chicken
-category: Kyckling
+category: kyckling
 source: https://www.ica.se/recept/grekisk-plat-726200/
 ---
 
