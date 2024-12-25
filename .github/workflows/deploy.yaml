@@ -21,3 +21,20 @@ jobs:
           branch: 'main'
           git_remote_url: 'ssh://dokku@recept.gish.se:22/recipes'
           ssh_private_key: ${{ secrets.DOKKU_SSH_PRIVATE_KEY }}
+
+      - name: notify deploy finished
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            ${{ github.repository }} deployed
+
+      - name: notify deploy failed
+        uses: appleboy/telegram-action@master
+        if: ${{ failure() }}
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            ${{ github.repository }} failed deploy
