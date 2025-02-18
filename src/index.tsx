@@ -1,6 +1,5 @@
 import { walk } from "jsr:@std/fs/walk";
 import { extractYaml } from "jsr:@std/front-matter";
-import { Database } from "jsr:@db/sqlite";
 import { Hono } from "hono";
 import { etag } from "hono/etag";
 import { logger } from "hono/logger";
@@ -69,6 +68,8 @@ const getRecipes = async () => {
   return files;
 };
 
+let recipes: Recipe[] = [];
+
 const uppercaseFirst = (input: string): string => {
   const first = input.slice(0, 1);
   const rest = input.slice(1);
@@ -83,28 +84,10 @@ const formatSource = (source: string): string => {
 };
 
 const bootstrap = async () => {
-  const recipes = await getRecipes();
-  const db = new Database(":memory:");
-  db.exec(
-    `CREATE TABLE IF NOT EXISTS recipes(slug TEXT, content TEXT, title TEXT, category TEXT, source TEXT);`
-  );
-
-  for (const recipe of recipes) {
-    const { slug, content, title, category, source } = recipe;
-    db.exec(
-      "INSERT INTO recipes(slug, content, title, category, source) values(:slug, :content, :title, :category, :source);",
-      {
-        slug,
-        content,
-        category,
-        title,
-        source,
-      }
-    );
-  }
+  recipes = await getRecipes();
 
   const layout = (title: string, children: ReturnType<typeof html>) => {
-    return html` <!DOCTYPE html>
+    return html` <!doctype html>
       <html>
         <head>
           <link
@@ -122,24 +105,23 @@ const bootstrap = async () => {
 
   const notFoundPage = layout(
     "Sidan finns inte",
-    html`Hoppsan, sidan finns inte`
+    html`Hoppsan, sidan finns inte`,
   );
 
   const app = new Hono();
   app.use(compress()).use(appendTrailingSlash()).use(logger());
 
   app.get("/", (c) => {
-    const stmt = db.prepare(
-      "SELECT slug, content, title, category FROM recipes ORDER BY title"
+    const sortedRecipes = [...recipes].sort((a, b) =>
+      a.title < b.title ? -1 : 1,
     );
-    const recipes: Recipe[] = stmt.all<Recipe>();
     const output = html`<h1>Recept</h1>
       <ul>
-        ${recipes.map(
+        ${sortedRecipes.map(
           (recipe) =>
             html`<li>
               <a href="/recept/${recipe.slug}">${recipe.title}</a>
-            </li>`
+            </li>`,
         )}
       </ul>`;
     const page = layout("Start", output);
@@ -147,26 +129,24 @@ const bootstrap = async () => {
   });
 
   app.get("/kategorier", (c) => {
-    const stmt = db.prepare(
-      "SELECT category, COUNT(slug) AS sum FROM recipes GROUP BY category ORDER BY category"
-    );
-    const categories = stmt.all<Pick<Recipe, "category"> & { sum: number }>();
-    if (!categories.length) {
+    const allCategories = recipes.map((recipe) => recipe.category);
+    const uniqueCategories = [...new Set(allCategories)];
+    const getNumberOfEntriesByCategory = (category: string) =>
+      recipes.filter((recipe) => recipe.category === category).length;
+    if (!uniqueCategories.length) {
       return c.html(notFoundPage, 404);
     }
 
     const output = html`
       <h1>Kategorier</h1>
       <ul>
-        ${categories.map(
-          (category) =>
-            html`<li>
-              <a href="/kategorier/${category.category}"
-                >${uppercaseFirst(category.category)}</a
-              >
-              (${`${category.sum}`})
-            </li>`
-        )}
+        ${uniqueCategories.map((category) => {
+          const sum = getNumberOfEntriesByCategory(category);
+          return html`<li>
+            <a href="/kategorier/${category}">${uppercaseFirst(category)}</a>
+            (${sum})
+          </li>`;
+        })}
       </ul>
       <a href="/">Start</a>
     `;
@@ -176,37 +156,27 @@ const bootstrap = async () => {
 
   app.get("/kategorier/:category", (c) => {
     const requestedCategory = c.req.param("category");
-    const stmt = db.prepare(
-      "SELECT slug, content, title, category FROM recipes WHERE category = ? ORDER BY title"
+    const recipesOfCategory = recipes.filter(
+      (recipe) => recipe.category === requestedCategory,
     );
-    const allRecipes = stmt.all<Recipe>(requestedCategory);
-    if (!allRecipes.length) {
-      return c.html(notFoundPage, 404);
-    }
-    const recipes: Recipe[] = [];
-    for (const recipe of allRecipes) {
-      recipes.push(recipe);
-    }
-    const category = recipes.at(0)?.category;
-
-    if (!category) {
+    if (!recipesOfCategory.length) {
       return c.html(notFoundPage, 404);
     }
 
     const output = html`
-      <h1>Recept med kategori ${category}</h1>
+      <h1>Recept med kategori ${requestedCategory}</h1>
       <ul>
-        ${recipes.map(
+        ${recipesOfCategory.map(
           (recipe) =>
             html`<li>
               <a href="/recept/${recipe.slug}">${recipe.title}</a>
-            </li>`
+            </li>`,
         )}
       </ul>
       <a href="/">Start</a>
     `;
 
-    const readableCategory = uppercaseFirst(category);
+    const readableCategory = uppercaseFirst(requestedCategory);
     const page = layout(readableCategory, output);
     return c.html(page);
   });
@@ -214,16 +184,9 @@ const bootstrap = async () => {
   app.use("/recept/*", etag());
 
   app.get("/recept/:slug", async (c) => {
-    const stmt = db.prepare(
-      "SELECT slug, content, title, category, source FROM recipes WHERE slug = ?"
-    );
     const slug = c.req.param("slug");
-    const allRecipes = stmt.all<Recipe>(slug);
-    if (!allRecipes.length) {
-      return c.html(notFoundPage, 404);
-    }
-    const recipe = allRecipes.at(0);
-    if (recipe === undefined) {
+    const recipe = recipes.find((recipe) => recipe.slug === slug);
+    if (!recipe) {
       return c.html(notFoundPage, 404);
     }
     const content = await Renderer.render(recipe.content);

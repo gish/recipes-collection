@@ -3,7 +3,6 @@
     "dev": "deno run --watch --allow-all src/index.tsx"
   },
   "imports": {
-    "@db/sqlite": "jsr:@db/sqlite@^0.12.0",
     "hono": "jsr:@hono/hono@^4.6.5",
     "@libs/markdown": "jsr:@libs/markdown@^2.0.0",
     "@mark/html": "jsr:@mark/html@^1.0.0",
