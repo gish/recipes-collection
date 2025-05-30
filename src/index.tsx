@@ -87,7 +87,7 @@ const bootstrap = async () => {
   recipes = await getRecipes();
 
   const layout = (title: string, children: ReturnType<typeof html>) => {
-    return html` <!doctype html>
+    return html` <!DOCTYPE html>
       <html>
         <head>
           <link
@@ -156,9 +156,9 @@ const bootstrap = async () => {
 
   app.get("/kategorier/:category", (c) => {
     const requestedCategory = c.req.param("category");
-    const recipesOfCategory = recipes.filter(
-      (recipe) => recipe.category === requestedCategory,
-    );
+    const recipesOfCategory = recipes
+      .filter((recipe) => recipe.category === requestedCategory)
+      .toSorted((a, b) => (a.title < b.title ? -1 : 1));
     if (!recipesOfCategory.length) {
       return c.html(notFoundPage, 404);
     }
