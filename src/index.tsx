@@ -144,7 +144,7 @@ const bootstrap = async () => {
           const sum = getNumberOfEntriesByCategory(category);
           return html`<li>
             <a href="/kategorier/${category}">${uppercaseFirst(category)}</a>
-            (${sum})
+            (${sum.toString()})
           </li>`;
         })}
       </ul>
